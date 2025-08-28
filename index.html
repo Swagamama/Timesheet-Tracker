@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Roster Start-Time Tracker</title>
+<!-- Minimal, clean, no-build CSS -->
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121820;
+    --ink: #eaf2ff;
+    --muted: #9bb2cf;
+    --accent: #2bd576;
+    --accent-weak: #1f9f56;
+    --chip: #182230;
+    --chip2: #1b2534;
+    --danger: #ff6a6a;
+    --warning: #ffd166;
+    --info: #60a5fa;
+    --ok: #34d399;
+    --border: #223043;
+  }
+  html, body { background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+  .wrap { max-width: 980px; margin: 32px auto; padding: 0 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: .2px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 840px) { .row { grid-template-columns: 1fr 1fr; } }
+  .picker { display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+  .picker input[type="file"] { background: var(--chip); border: 1px dashed var(--border); padding: 10px; border-radius: 12px; color: var(--muted); }
+  .btn { appearance:none; background: var(--accent); color:#04130a; border:0; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer }
+  .btn:disabled { opacity:.5; cursor:not-allowed }
+  select { background: var(--chip); color: var(--ink); border: 1px solid var(--border); border-radius: 10px; padding: 10px; min-width: 260px; }
+  .grid { display:grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 12px; }
+  .day { background: linear-gradient(180deg, var(--chip), var(--chip2)); border: 1px solid var(--border); border-radius: 14px; padding: 12px; min-height: 90px; }
+  .day h4 { margin: 0 0 8px; font-size: 15px; color: var(--muted); font-weight:600; letter-spacing:.2px }
+  .time { font-size: 22px; font-weight: 800; letter-spacing:.3px }
+  .mutey { font-size: 13px; color: var(--muted); margin-top:6px }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top: 10px }
+  .chip { font-size:12px; padding:4px 8px; border-radius:999px; background:#1a2636; border:1px solid var(--border) }
+  .segment { background: #142033; border-color:#203044 }
+  .note { background: #132a1d; border-color:#1d3b2a; color: #9feabf }
+  .bar { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .meta { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .dot { width:10px; height:10px; background:var(--accent); border-radius:50%; display:inline-block; vertical-align:middle; margin-right:6px }
+  .danger { color: var(--danger); }
+  .help { font-size: 13px; color: var(--muted) }
+  .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#0e1520; border:1px solid #1e2b3d; padding:2px 6px; border-radius:6px }
+  .footer { margin-top:18px; color:var(--muted); font-size:12px }
+  .hidden { display:none !important; }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#10202b; border:1px solid var(--border); border-radius:999px; font-size:12px; }
+</style>
+
+<!-- pdf.js (browser only) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js" integrity="sha512-3Rk6O8s2necYJ4sEdJ0tOEtQ5EiJv+tGmQmY0KT62y2NWg41xGzT6G1c4m+E3+kLNpIrn2Vqk61V8D9fQ2mTBg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  // Configure worker (required by pdf.js on some hosts, including GitHub Pages)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js";
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Roster Start-Time Tracker</h1>
+    <div class="sub">Uploads your timesheet PDF, extracts your <b>start times (Mon–Fri)</b>, includes notes like <span class="kbd">(ATM)</span>, tags each day with the segment, and remembers up to <b>5 weeks</b> automatically.</div>
+
+    <div class="row">
+      <div class="picker">
+        <input id="pdfInput" type="file" accept="application/pdf" />
+        <button id="parseBtn" class="btn" disabled>Scan PDF</button>
+        <span class="help">Tip: You can add multiple weeks over time. They’ll appear in the dropdown.</span>
+      </div>
+      <div class="bar">
+        <div class="meta">
+          <label class="help" for="sheetSelect">Saved Timesheets</label>
+          <select id="sheetSelect" aria-label="Saved timesheets"></select>
+          <span id="currentBadge" class="badge hidden"><span class="dot"></span> Current work week</span>
+        </div>
+        <div class="meta">
+          <button id="forgetOld" class="btn" title="Remove items older than 5 weeks">Clean Old (5w)</button>
+          <span id="status" class="help"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="output" class="grid" style="margin-top:16px"></div>
+    <div id="empty" class="help">No timesheet selected yet. Upload a PDF to begin.</div>
+
+    <div class="footer">
+      Employee: <b>Rohan</b> • Timezone uses your device (Australia/Brisbane recommended).<br/>
+      Built for layouts like your sample roster (names in columns for Monday–Friday, with segment blocks such as Batching / ATM/Processing / Dispatch / Leave).
+    </div>
+  </div>
+</div>
+
+<script>
+/* === CONFIG === */
+const EMPLOYEE_NAME = /\\bRohan\\b/i; // hardcoded as requested
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const SEGMENT_ALIASES = [
+  "Batching",
+  "ATM/Processing",
+  "ATM/ Processing office",
+  "Dispatch",
+  "Leave",
+  "Packer/CP",
+  "ATM/ Processing", // extra alias just in case
+];
+// hold for 5 weeks then forget
+const TTL_DAYS = 35;
+
+/* === STATE & STORAGE === */
+const LS_KEY = "roster-timesheets-v1";
+function loadSheets() {
+  pruneOld();
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; }
+}
+function saveSheets(arr) { localStorage.setItem(LS_KEY, JSON.stringify(arr)); }
+function pruneOld() {
+  const now = Date.now();
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { arr = []; }
+  const keep = arr.filter(s => {
+    const ref = new Date(s.weekEnd || s.createdAt).getTime();
+    return now - ref <= TTL_DAYS * 86400000;
+  });
+  if (keep.length !== arr.length) localStorage.setItem(LS_KEY, JSON.stringify(keep));
+}
+
+/* === DATE HELPERS === */
+function parseDdMmYyyy(s) {
+  // Accept dd.mm.yyyy or dd/mm/yyyy
+  const m = s.match(/(\\d{2})[./](\\d{2})[./](\\d{4})/);
+  if (!m) return null;
+  const [_, dd, mm, yyyy] = m;
+  return new Date(Number(yyyy), Number(mm)-1, Number(dd));
+}
+function startOfMonday(d) {
+  const x = new Date(d); // copy
+  const day = (x.getDay()+6)%7; // Mon=0..Sun=6
+  x.setDate(x.getDate() - day);
+  x.setHours(0,0,0,0);
+  return x;
+}
+function endOfSunday(d) {
+  const mon = startOfMonday(d);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate()+6);
+  sun.setHours(23,59,59,999);
+  return sun;
+}
+function isCurrentWorkWeek(weekStart) {
+  const today = new Date();
+  const curMon = startOfMonday(today);
+  return startOfMonday(new Date(weekStart)).getTime() === curMon.getTime();
+}
+function fmtDate(d){
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+/* === UI HOOKS === */
+const input = document.getElementById("pdfInput");
+const parseBtn = document.getElementById("parseBtn");
+const sheetSelect = document.getElementById("sheetSelect");
+const currentBadge = document.getElementById("currentBadge");
+const output = document.getElementById("output");
+const empty = document.getElementById("empty");
+const statusEl = document.getElementById("status");
+const forgetOldBtn = document.getElementById("forgetOld");
+
+let SHEETS = loadSheets();
+renderSheetOptions();
+
+input.addEventListener("change", () => {
+  parseBtn.disabled = !input.files || !input.files[0];
+});
+parseBtn.addEventListener("click", async () => {
+  if (!input.files || !input.files[0]) return;
+  parseBtn.disabled = true;
+  status("Scanning PDF…");
+  try {
+    const file = input.files[0];
+    const arrayBuffer = await file.arrayBuffer();
+    const parsed = await extractRosterFromPDF(arrayBuffer);
+    if (!parsed) throw new Error("Could not read a valid Mon–Fri roster for Rohan.");
+    // add to storage (dedupe by weekEnd or hash)
+    // Prefer weekEnd if found; else use createdAt for TTL
+    const exists = SHEETS.find(s => s.weekEnd && parsed.weekEnd && new Date(s.weekEnd).getTime() === new Date(parsed.weekEnd).getTime());
+    if (exists) {
+      Object.assign(exists, parsed, { updatedAt: Date.now() });
+    } else {
+      SHEETS.push({ ...parsed, createdAt: Date.now() });
+    }
+    saveSheets(SHEETS);
+    renderSheetOptions(parsed.id);
+    selectById(parsed.id);
+    status("Saved.");
+  } catch (e) {
+    console.error(e);
+    status("Scan failed. Make sure the PDF layout matches your roster.", true);
+  } finally {
+    parseBtn.disabled = false;
+  }
+});
+sheetSelect.addEventListener("change", () => {
+  const id = sheetSelect.value;
+  const s = SHEETS.find(x => x.id === id);
+  renderSheet(s);
+});
+forgetOldBtn.addEventListener("click", () => {
+  pruneOld();
+  SHEETS = loadSheets();
+  renderSheetOptions();
+  status("Cleaned items older than 5 weeks.");
+});
+
+function status(msg, isErr=false) {
+  statusEl.textContent = msg || "";
+  statusEl.classList.toggle("danger", !!isErr);
+  if (msg) setTimeout(() => { statusEl.textContent = ""; statusEl.classList.remove("danger"); }, 3500);
+}
+
+function renderSheetOptions(preselectId) {
+  SHEETS.sort((a,b) => new Date(b.weekStart||b.createdAt) - new Date(a.weekStart||a.createdAt));
+  sheetSelect.innerHTML = "";
+  if (SHEETS.length === 0) {
+    sheetSelect.innerHTML = `<option disabled selected>No saved timesheets</option>`;
+    currentBadge.classList.add("hidden");
+    output.innerHTML = "";
+    empty.classList.remove("hidden");
+    return;
+  }
+  for (const s of SHEETS) {
+    const isCurrent = s.weekStart && isCurrentWorkWeek(s.weekStart);
+    const label = s.weekStart && s.weekEnd
+      ? `${isCurrent ? "🟢 " : ""}Week: ${fmtDate(new Date(s.weekStart))} → ${fmtDate(new Date(s.weekEnd))}`
+      : `${isCurrent ? "🟢 " : ""}Saved ${new Date(s.createdAt||Date.now()).toLocaleDateString()}`;
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = label;
+    sheetSelect.appendChild(opt);
+  }
+  if (preselectId) selectById(preselectId);
+  else selectById(SHEETS[0].id);
+}
+
+function selectById(id) {
+  sheetSelect.value = id;
+  const s = SHEETS.find(x => x.id === id);
+  renderSheet(s);
+}
+
+function renderSheet(s) {
+  if (!s) { output.innerHTML = ""; empty.classList.remove("hidden"); currentBadge.classList.add("hidden"); return; }
+  empty.classList.add("hidden");
+  output.innerHTML = "";
+  const cur = s.weekStart && isCurrentWorkWeek(s.weekStart);
+  currentBadge.classList.toggle("hidden", !cur);
+  // Build 5 day tiles
+  const order = DAYS;
+  for (const day of order) {
+    const info = s.days?.[day] || {};
+    const box = document.createElement("div");
+    box.className = "day";
+    const head = document.createElement("h4");
+    head.textContent = info.date ? `${day} • ${fmtDate(new Date(info.date))}` : day;
+    const t = document.createElement("div");
+    t.className = "time";
+    t.textContent = info.start || "-";
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    if (info.segment) {
+      const c = document.createElement("span");
+      c.className = "chip segment";
+      c.textContent = info.segment;
+      chips.appendChild(c);
+    }
+    if (info.note) {
+      const c = document.createElement("span");
+      c.className = "chip note";
+      c.textContent = info.note;
+      chips.appendChild(c);
+    }
+    const sub = document.createElement("div");
+    sub.className = "mutey";
+    sub.textContent = info.source || "";
+    box.appendChild(head);
+    box.appendChild(t);
+    box.appendChild(chips);
+    if (info.source) box.appendChild(sub);
+    output.appendChild(box);
+  }
+}
+
+/* === PDF EXTRACTION ===
+   Strategy:
+   - Use pdf.js getTextContent() to read words with x/y coordinates.
+   - Detect day-column headers (Monday..Friday) to define 5 column X-ranges.
+   - For each day column, locate the cell containing "Rohan" (case-insensitive).
+   - Find the nearest time token "H:MM-H:MM" in the same column (prefer same row or the closest above).
+   - Extract the start time (first part before "-").
+   - Pull any notes from the name token "(...)" e.g. "Rohan(ATM)" → note "ATM".
+   - Determine segment by looking up to the closest segment header (left-side titles like "Batching", "ATM/Processing", "Dispatch", "Leave").
+   - Read week dates (either "Week ending dd/mm/yyyy" or per-day dd.mm.yyyy).
+*/
+async function extractRosterFromPDF(arrayBuffer) {
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const items = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    for (const it of tc.items) {
+      const str = (it.str || "").trim();
+      if (!str) continue;
+      const [a,b,c,d,e,f] = it.transform;
+      const x = e, y = f; // pdf.js: e = x, f = y (bottom-left origin)
+      items.push({ str, x, y, page: p, width: it.width || 0, height: it.height || 0 });
+    }
+  }
+  // Normalize coordinates: higher y at top is nicer → invert y per page
+  const pageHeights = {}; // naive max y per page
+  items.forEach(it => { pageHeights[it.page] = Math.max(pageHeights[it.page]||0, it.y); });
+  items.forEach(it => { it.yTop = pageHeights[it.page] - it.y; });
+
+  // Find day headers
+  const dayHeaders = [];
+  for (const it of items) {
+    const text = it.str.replace(/[^A-Za-z]/g,"");
+    if (DAYS.includes(text)) dayHeaders.push(it);
+  }
+  if (dayHeaders.length < 3) throw new Error("Could not locate day headers.");
+
+  // Establish 5 columns by X positions of the headers
+  dayHeaders.sort((a,b)=>a.x-b.x);
+  // Unique by the first page/row; just take the leftmost instance of each day
+  const cols = [];
+  const seen = new Set();
+  for (const d of DAYS) {
+    const cand = dayHeaders.filter(h => h.str.replace(/[^A-Za-z]/g,"") === d).sort((a,b)=>a.x-b.x)[0];
+    if (cand && !seen.has(d)) {
+      seen.add(d);
+      cols.push({ day:d, x:cand.x, yTop:cand.yTop });
+    }
+  }
+  cols.sort((a,b)=>a.x-b.x);
+  if (cols.length !== 5) {
+    // Fallback: use the 5 smallest x-positions
+    const uniq = Array.from(new Set(dayHeaders.map(h => Math.round(h.x)))).sort((a,b)=>a-b).slice(0,5);
+    cols.length = 0;
+    uniq.forEach((x,i)=> cols.push({ day: DAYS[i] || ("Day"+(i+1)), x }));
+  }
+
+  // Compute column x ranges (midpoints between headers)
+  const ranges = [];
+  for (let i=0;i<cols.length;i++){
+    const left = i===0 ? -Infinity : (cols[i-1].x + cols[i].x)/2;
+    const right = i===cols.length-1 ? Infinity : (cols[i].x + cols[i+1].x)/2;
+    ranges.push({ day: cols[i].day, left, right, anchorX: cols[i].x });
+  }
+
+  // Helper: items inside a column
+  function inCol(it, range){ return it.x >= range.left && it.x < range.right; }
+
+  // Get week dates
+  let weekEnd = null, weekStart = null;
+  const weekEndingLine = items.find(it => /Week\\s+ending/i.test(it.str));
+  if (weekEndingLine) {
+    const dateStr = weekEndingLine.str.match(/(\\d{2}[\\/](\\d{2})[\\/](\\d{4}))/)?.[0];
+    if (dateStr) {
+      weekEnd = parseDdMmYyyy(dateStr);
+      if (weekEnd) {
+        weekStart = startOfMonday(weekEnd);
+      }
+    }
+  }
+  // If not found, try the date row directly under headers e.g. "01.09.2025"
+  if (!weekStart) {
+    // Find the closest date under Monday header within same column
+    const mondayCol = ranges[0];
+    const dateToken = items
+      .filter(it => inCol(it, mondayCol))
+      .find(it => /(\\d{2}[.](\\d{2})[.](\\d{4}))/i.test(it.str));
+    if (dateToken) {
+      const d = parseDdMmYyyy(dateToken.str);
+      if (d) {
+        weekStart = startOfMonday(d);
+        weekEnd = endOfSunday(weekStart);
+      }
+    }
+  }
+
+  // For segment detection, capture any left-margin titles that look like segments
+  const leftEdge = Math.min(...items.map(i=>i.x));
+  const segmentCands = items
+    .filter(it => {
+      const s = it.str.trim();
+      return SEGMENT_ALIASES.some(t => s.toLowerCase().includes(t.toLowerCase()));
+    })
+    .map(it => ({ ...it, label: normalizeSegment(it.str) }));
+  function normalizeSegment(s) {
+    s = s.replace(/\\s+/g, " ").trim();
+    if (/batching/i.test(s)) return "Batching";
+    if (/dispatch/i.test(s)) return "Dispatch";
+    if (/leave/i.test(s)) return "Leave";
+    if (/packer\\s*\\/\\s*cp/i.test(s)) return "Packer/CP";
+    if (/atm\\/?\\s*processing/i.test(s) || /processing office/i.test(s)) return "ATM/Processing";
+    return s;
+  }
+
+  // Find notes in a token like "Rohan(ATM)" or "Rohan (ATM)"
+  function extractNote(str) {
+    const m = str.match(/\\(([^)]+)\\)/);
+    return m ? m[1].trim() : "";
+  }
+
+  // Time tokens in format "H:MM-H:MM"
+  const TIME_RE = /(\\d{1,2}:\\d{2})\\s*-\\s*(\\d{1,2}:\\d{2})/;
+
+  const resultDays = {};
+  for (const col of ranges) {
+    const colItems = items.filter(it => inCol(it, col));
+    // Find any item mentioning "Rohan"
+    const nameHits = colItems.filter(it => EMPLOYEE_NAME.test(it.str));
+    if (nameHits.length === 0) {
+      resultDays[col.day] = { start:"-", note:"", segment:"", date: deriveDateForDay(col.day, weekStart) };
+      continue;
+    }
+    // If multiple, pick the one with the clearest nearby time
+    let best = null;
+    let bestScore = Infinity;
+    for (const nm of nameHits) {
+      // nearest time token in the same column by vertical distance (prefer above or same row)
+      const timeHits = colItems.filter(it => TIME_RE.test(it.str));
+      let chosen = null, dyBest = Infinity;
+      for (const th of timeHits) {
+        const dy = Math.abs(th.yTop - nm.yTop);
+        if (dy < dyBest) { dyBest = dy; chosen = th; }
+      }
+      // score = vertical distance to time + small penalty if time is below (prefer above/same)
+      let score = dyBest + (chosen && chosen.yTop > nm.yTop ? 10 : 0);
+      if (score < bestScore) { bestScore = score; best = { nameItem: nm, timeItem: chosen }; }
+    }
+    let start = "-";
+    if (best && best.timeItem) {
+      const m = best.timeItem.str.match(TIME_RE);
+      if (m) start = m[1];
+    }
+    // note from name token
+    const note = extractNote(best?.nameItem?.str || "");
+    // segment: find nearest segment candidate above the name on the page (any column)
+    let seg = "";
+    if (best?.nameItem) {
+      let sBest = null, sDy = Infinity;
+      for (const sc of segmentCands) {
+        // segment near in Y, and to the left (encourage broad section label)
+        const dy = best.nameItem.page === sc.page ? Math.abs(sc.yTop - best.nameItem.yTop) : 9999;
+        if (dy < sDy && sc.yTop <= best.nameItem.yTop + 14) { // prefer above or roughly same line
+          sDy = dy; sBest = sc;
+        }
+      }
+      seg = sBest?.label || seg;
+    }
+    resultDays[col.day] = {
+      start,
+      note,
+      segment: seg,
+      date: deriveDateForDay(col.day, weekStart),
+      source: "" // optional small print under the tile
+    };
+  }
+
+  // Build ID and return
+  const id = (weekStart && weekEnd)
+    ? `we-${fmtDate(weekStart)}-${fmtDate(weekEnd)}`
+    : `sheet-${Date.now()}`;
+  return {
+    id,
+    weekStart: weekStart ? weekStart.toISOString() : null,
+    weekEnd: weekEnd ? weekEnd.toISOString() : null,
+    days: resultDays
+  };
+}
+
+function deriveDateForDay(day, weekStart) {
+  if (!weekStart) return null;
+  const idx = DAYS.indexOf(day);
+  const d = new Date(weekStart);
+  d.setDate(d.getDate() + (idx<0?0:idx));
+  return d.toISOString();
+}
+</script>
+</body>
+</html>
