@@ -302,6 +302,7 @@
 
         class RosterTracker {
             constructor() {
+                this.tempStorage = {}; // Initialize temp storage
                 this.rosters = this.loadFromStorage();
                 this.currentWeek = null;
                 this.userName = 'Rohan';
@@ -540,6 +541,8 @@
             saveRoster(rosterData) {
                 this.rosters[rosterData.weekEnding] = rosterData;
                 this.saveToStorage();
+                console.log('Saved roster for week:', rosterData.weekEnding);
+                console.log('Total rosters:', Object.keys(this.rosters).length);
             }
 
             displayWeek(weekEnding) {
@@ -695,23 +698,14 @@
             }
 
             saveToStorage() {
-                try {
-                    const rosterData = JSON.stringify(this.rosters);
-                    const tempStorage = {};
-                    tempStorage['rosterData'] = rosterData;
-                    this.tempStorage = tempStorage;
-                } catch (e) {
-                    console.warn('Storage not available, using memory only');
-                }
+                // Using in-memory storage only since localStorage is not supported
+                // Data will persist during the session
+                this.tempStorage = { ...this.rosters };
             }
 
             loadFromStorage() {
-                try {
-                    const stored = this.tempStorage?.rosterData;
-                    return stored ? JSON.parse(stored) : {};
-                } catch (e) {
-                    return {};
-                }
+                // Return existing temp storage or empty object
+                return this.tempStorage || {};
             }
         }
 
