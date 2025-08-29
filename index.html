@@ -378,20 +378,25 @@
 
             parseRosterText(textContent) {
                 const items = textContent.items.map(item => item.str);
-                const text = items.join('\n');
+                const fullText = items.join(' ');
                 
                 // Find week ending date
-                const weekEndingMatch = text.match(/Week ending (\d{2}\/\d{2}\/\d{4})/);
-                if (!weekEndingMatch) return null;
+                const weekEndingMatch = fullText.match(/Week ending (\d{2}\/\d{2}\/\d{4})/);
+                if (!weekEndingMatch) {
+                    console.log('No week ending found');
+                    return null;
+                }
                 const weekEnding = weekEndingMatch[1];
+                console.log('Found week ending:', weekEnding);
 
-                // Parse the roster structure
+                // Initialize schedule structure
                 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
                 const schedule = {};
                 
-                // Find dates for each day - they appear at the top
+                // Find dates for each day
                 const datePattern = /(\d{2}\.\d{2}\.\d{4})/g;
-                const dates = text.match(datePattern);
+                const dates = fullText.match(datePattern);
+                console.log('Found dates:', dates);
                 
                 if (dates && dates.length >= 5) {
                     days.forEach((day, index) => {
@@ -402,115 +407,98 @@
                     });
                 }
 
-                // Split text into lines for processing
-                const lines = text.split('\n').filter(line => line.trim());
+                // Parse the PDF structure more carefully
+                // The PDF has sections like "ATM/ Processing office", "Packer/CP", etc.
+                // Each section has time slots and names arranged in columns for each day
                 
-                // Section mappings
+                const textItems = textContent.items;
+                console.log('Total text items:', textItems.length);
+                
+                // Group items by their y-coordinate (rows) and x-coordinate (columns)
+                const rows = {};
+                textItems.forEach(item => {
+                    const y = Math.round(item.transform[5]); // Y coordinate
+                    if (!rows[y]) rows[y] = [];
+                    rows[y].push({
+                        text: item.str,
+                        x: Math.round(item.transform[4]) // X coordinate
+                    });
+                });
+
+                // Sort rows by Y coordinate (top to bottom)
+                const sortedYs = Object.keys(rows).map(Number).sort((a, b) => b - a);
+                
+                let currentSection = '';
                 const sections = [
                     'ATM/ Processing office',
-                    'Packer/CP',
+                    'Packer/CP', 
                     'Batching',
                     'ATM/Processing',
                     'Dispatch',
                     'Leave'
                 ];
 
-                let currentSection = '';
-                let currentTimeSlot = '';
-                
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
+                // Process each row
+                for (let y of sortedYs) {
+                    const rowItems = rows[y].sort((a, b) => a.x - b.x);
+                    const rowText = rowItems.map(item => item.text).join(' ');
                     
-                    // Check if this line is a section header
-                    const sectionMatch = sections.find(section => line.includes(section));
-                    if (sectionMatch) {
-                        currentSection = sectionMatch;
+                    // Check if this row contains a section header
+                    const foundSection = sections.find(section => rowText.includes(section));
+                    if (foundSection) {
+                        currentSection = foundSection;
+                        console.log('Found section:', currentSection);
                         continue;
                     }
                     
-                    // Check for time slots
-                    const timeMatch = line.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
-                    if (timeMatch) {
-                        currentTimeSlot = timeMatch[0];
+                    // Check if this row contains a time slot
+                    const timeMatch = rowText.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
+                    if (timeMatch && currentSection) {
+                        const timeSlot = timeMatch[0];
+                        const startTime = timeMatch[1];
+                        const endTime = timeMatch[2];
+                        console.log('Found time slot:', timeSlot, 'in section:', currentSection);
                         
-                        // Look for names in the next few lines
-                        for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-                            const nameLine = lines[j].trim();
-                            
-                            // Check if this line contains Rohan
-                            if (nameLine.includes('Rohan')) {
-                                // Parse the name line to extract details
-                                const rohanMatch = nameLine.match(/Rohan(\s*\(([^)]+)\))?/);
-                                const note = rohanMatch && rohanMatch[2] ? rohanMatch[2] : '';
+                        // Look for Rohan in the same row or subsequent rows
+                        let foundRohan = false;
+                        
+                        // Check current row first
+                        if (rowText.includes('Rohan')) {
+                            foundRohan = true;
+                            this.processRohanEntry(rowText, rowItems, schedule, days, startTime, endTime, currentSection);
+                        }
+                        
+                        // If not found in current row, check next few rows for names
+                        if (!foundRohan) {
+                            const currentYIndex = sortedYs.indexOf(y);
+                            for (let i = currentYIndex + 1; i < Math.min(currentYIndex + 10, sortedYs.length); i++) {
+                                const nextY = sortedYs[i];
+                                const nextRowItems = rows[nextY].sort((a, b) => a.x - b.x);
+                                const nextRowText = nextRowItems.map(item => item.text).join(' ');
                                 
-                                // Determine which day column this appears in
-                                const dayIndex = this.findDayColumn(nameLine, lines, j);
-                                
-                                if (dayIndex >= 0 && dayIndex < days.length) {
-                                    const day = days[dayIndex];
-                                    const [startTime, endTime] = currentTimeSlot.split('-');
-                                    
-                                    schedule[day].shifts.push({
-                                        startTime: startTime,
-                                        endTime: endTime,
-                                        section: currentSection || 'General',
-                                        note: note
-                                    });
+                                // Stop if we hit another time slot or section
+                                if (nextRowText.match(/\d{1,2}:\d{2}-\d{1,2}:\d{2}/) || 
+                                    sections.some(section => nextRowText.includes(section))) {
+                                    break;
                                 }
-                                break;
+                                
+                                if (nextRowText.includes('Rohan')) {
+                                    this.processRohanEntry(nextRowText, nextRowItems, schedule, days, startTime, endTime, currentSection);
+                                    break;
+                                }
                             }
                         }
                     }
                 }
 
-                // If parsing fails, use the reference data from your PDF
-                if (Object.keys(schedule).every(day => !schedule[day].shifts || schedule[day].shifts.length === 0)) {
-                    // Using your reference data for week ending 31/08/2025
-                    schedule['Monday'] = {
-                        date: '25.08.2025',
-                        shifts: [{
-                            startTime: '9:30',
-                            endTime: '18:00',
-                            section: 'Dispatch',
-                            note: ''
-                        }]
-                    };
-                    schedule['Tuesday'] = {
-                        date: '26.08.2025',
-                        shifts: [{
-                            startTime: '9:30',
-                            endTime: '18:00',
-                            section: 'Dispatch',
-                            note: ''
-                        }]
-                    };
-                    schedule['Wednesday'] = {
-                        date: '27.08.2025',
-                        shifts: [{
-                            startTime: '7:00',
-                            endTime: '13:00',
-                            section: 'Batching',
-                            note: 'ATM'
-                        }]
-                    };
-                    schedule['Thursday'] = {
-                        date: '28.08.2025',
-                        shifts: [{
-                            startTime: '10:30',
-                            endTime: '16:30',
-                            section: 'ATM/ Processing office',
-                            note: ''
-                        }]
-                    };
-                    schedule['Friday'] = {
-                        date: '29.08.2025',
-                        shifts: [{
-                            startTime: '6:30',
-                            endTime: '15:30',
-                            section: 'Dispatch',
-                            note: 'ATM'
-                        }]
-                    };
+                console.log('Final schedule:', schedule);
+                
+                // Check if we found any shifts for Rohan
+                const hasShifts = days.some(day => schedule[day] && schedule[day].shifts && schedule[day].shifts.length > 0);
+                
+                if (!hasShifts) {
+                    console.log('No shifts found for Rohan, parsing may have failed');
+                    return null;
                 }
 
                 return {
@@ -518,6 +506,65 @@
                     schedule,
                     uploadDate: new Date().toISOString()
                 };
+            }
+
+            processRohanEntry(rowText, rowItems, schedule, days, startTime, endTime, currentSection) {
+                console.log('Processing Rohan entry:', rowText);
+                
+                // Extract note if present (e.g., "Rohan(ATM)" or "Rohan (ATM)")
+                const noteMatch = rowText.match(/Rohan\s*\(([^)]+)\)/);
+                const note = noteMatch ? noteMatch[1] : '';
+                
+                // Find which column(s) Rohan appears in
+                // The PDF has day columns, so we need to determine column positions
+                const rohanItems = rowItems.filter(item => item.text.includes('Rohan'));
+                
+                if (rohanItems.length > 0) {
+                    // Determine day columns based on x-coordinates
+                    // We need to map x-coordinates to days
+                    const dayColumns = this.mapColumnsToDays(rowItems);
+                    
+                    rohanItems.forEach(rohanItem => {
+                        const dayIndex = this.getDayFromXCoordinate(rohanItem.x, dayColumns);
+                        if (dayIndex >= 0 && dayIndex < days.length) {
+                            const day = days[dayIndex];
+                            console.log(`Adding shift for ${day}: ${startTime}-${endTime} in ${currentSection}`);
+                            
+                            schedule[day].shifts.push({
+                                startTime: startTime,
+                                endTime: endTime,
+                                section: currentSection,
+                                note: note
+                            });
+                        }
+                    });
+                }
+            }
+
+            mapColumnsToDays(rowItems) {
+                // This function maps x-coordinates to day columns
+                // Sort items by x-coordinate to establish column boundaries
+                const sortedItems = rowItems.sort((a, b) => a.x - b.x);
+                const xCoords = sortedItems.map(item => item.x);
+                
+                // Find day headers in the document to establish column boundaries
+                // For now, we'll use a simple approach assuming 5 equal columns
+                const minX = Math.min(...xCoords);
+                const maxX = Math.max(...xCoords);
+                const columnWidth = (maxX - minX) / 5;
+                
+                return {
+                    minX,
+                    maxX,
+                    columnWidth
+                };
+            }
+
+            getDayFromXCoordinate(x, dayColumns) {
+                // Determine which day column this x-coordinate belongs to
+                const relativeX = x - dayColumns.minX;
+                const columnIndex = Math.floor(relativeX / dayColumns.columnWidth);
+                return Math.min(Math.max(columnIndex, 0), 4); // Ensure 0-4 range
             }
 
             findDayColumn(nameLine, allLines, currentIndex) {
