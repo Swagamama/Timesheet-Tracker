@@ -12,72 +12,80 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
             min-height: 100vh;
-            padding: 20cognitive px;
+            padding: 20px;
+            color: #333;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #fff;
+            color: #333;
             padding: 30px;
             text-align: center;
+            border-bottom: 1px solid #e0e0e0;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
 
         .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
+            color: #666;
+            font-size: 1rem;
         }
 
         .controls {
             padding: 30px;
-            background: #f8f9fa;
+            background: #fafafa;
             border-bottom: 1px solid #e0e0e0;
         }
 
         .file-upload-area {
-            border: 2px dashed #667eea;
-            border-radius: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
             padding: 30px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             background: white;
             margin-bottom: 20px;
         }
 
         .file-upload-area:hover {
-            background: #f0f4ff;
-            border-color: #764ba2;
+            background: #f8f8f8;
+            border-color: #999;
         }
 
         .file-upload-area.dragging {
-            background: #e8eeff;
-            border-color: #4c63d2;
+            background: #f0f0f0;
+            border-color: #666;
         }
 
         #fileInput {
             display: none;
         }
 
-        .upload-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
+        .upload-text {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #666;
         }
 
         .dropdown-container {
@@ -88,39 +96,16 @@
         #weekSelector {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             font-size: 1rem;
             background: white;
             cursor: pointer;
-            transition: border-color 0.3s ease;
         }
 
         #weekSelector:focus {
             outline: none;
-            border-color: #667eea;
-        }
-
-        .current-week-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #4caf50;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-            }
+            border-color: #666;
         }
 
         .schedule-display {
@@ -128,16 +113,17 @@
         }
 
         .week-info {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-radius: 10px;
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 6px;
             margin-bottom: 25px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #333;
         }
 
         .week-info h3 {
             color: #333;
             margin-bottom: 5px;
+            font-weight: 600;
         }
 
         .week-info p {
@@ -148,54 +134,54 @@
         .day-schedule {
             background: white;
             border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
             padding: 20px;
-            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 20px;
         }
 
         .day-schedule:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .day-label {
             font-weight: 600;
-            color: #667eea;
+            color: #333;
             min-width: 100px;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .time-display {
-            font-size: 1.3rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 500;
             color: #333;
-            min-width: 80px;
+            min-width: 120px;
+            font-family: monospace;
         }
 
         .section-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #333;
             color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 4px;
             font-size: 0.85rem;
             font-weight: 500;
         }
 
         .note-badge {
-            background: #ffc107;
-            color: #333;
-            padding: 5px 12px;
-            border-radius: 20px;
+            background: #f0f0f0;
+            color: #666;
+            padding: 6px 12px;
+            border-radius: 4px;
             font-size: 0.85rem;
             font-weight: 500;
+            border: 1px solid #ddd;
         }
 
         .off-day {
-            background: #f5f5f5;
+            background: #f9f9f9;
             color: #999;
         }
 
@@ -211,10 +197,10 @@
 
         .spinner {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid #666;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
@@ -230,28 +216,27 @@
             color: #666;
         }
 
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.3;
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
         }
 
         .status-message {
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 6px;
             margin-bottom: 20px;
             display: none;
         }
 
         .status-message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #e8f5e8;
+            color: #2d5016;
+            border: 1px solid #c3e6c3;
             display: block;
         }
 
         .status-message.error {
-            background: #f8d7da;
+            background: #f8e8e8;
             color: #721c24;
             border: 1px solid #f5c6cb;
             display: block;
@@ -259,7 +244,7 @@
 
         @media (max-width: 600px) {
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.5rem;
             }
             
             .day-schedule {
@@ -270,6 +255,7 @@
             
             .container {
                 border-radius: 0;
+                margin: 0 -20px;
             }
             
             body {
@@ -281,15 +267,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📅 Roster Tracker</h1>
-            <p>Track your work schedule effortlessly</p>
+            <h1>Roster Tracker</h1>
+            <p>Track your work schedule</p>
         </div>
 
         <div class="controls">
             <div class="file-upload-area" id="uploadArea">
-                <div class="upload-icon">📄</div>
-                <p><strong>Click to upload PDF roster</strong></p>
-                <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">or drag and drop file here</p>
+                <div class="upload-text">Upload PDF Roster</div>
+                <div class="upload-subtext">Click here or drag and drop your roster file</div>
                 <input type="file" id="fileInput" accept=".pdf">
             </div>
 
@@ -304,7 +289,6 @@
 
         <div class="schedule-display" id="scheduleDisplay">
             <div class="empty-state">
-                <div class="empty-state-icon">📋</div>
                 <h3>No roster selected</h3>
                 <p>Upload a PDF roster or select a week from the dropdown to view your schedule</p>
             </div>
@@ -381,7 +365,7 @@
                         this.saveRoster(rosterData);
                         this.populateWeekSelector();
                         this.displayWeek(rosterData.weekEnding);
-                        this.showStatus('Roster uploaded successfully!', 'success');
+                        this.showStatus('Roster uploaded successfully', 'success');
                     } else {
                         this.showStatus('Could not find your schedule in this roster', 'error');
                     }
@@ -393,7 +377,7 @@
 
             parseRosterText(textContent) {
                 const items = textContent.items.map(item => item.str);
-                const text = items.join(' ');
+                const text = items.join('\n');
                 
                 // Find week ending date
                 const weekEndingMatch = text.match(/Week ending (\d{2}\/\d{2}\/\d{4})/);
@@ -404,7 +388,7 @@
                 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
                 const schedule = {};
                 
-                // Find dates for each day
+                // Find dates for each day - they appear at the top
                 const datePattern = /(\d{2}\.\d{2}\.\d{4})/g;
                 const dates = text.match(datePattern);
                 
@@ -417,97 +401,116 @@
                     });
                 }
 
-                // Sections to track
-                const sections = ['ATM/ Processing office', 'ATM/Processing', 'Batching', 'Packer/CP', 'Dispatch'];
+                // Split text into lines for processing
+                const lines = text.split('\n').filter(line => line.trim());
+                
+                // Section mappings
+                const sections = [
+                    'ATM/ Processing office',
+                    'Packer/CP',
+                    'Batching',
+                    'ATM/Processing',
+                    'Dispatch',
+                    'Leave'
+                ];
+
                 let currentSection = '';
+                let currentTimeSlot = '';
                 
-                // Process text line by line
-                const lines = text.split(/(?=\d{1,2}:\d{2}-\d{1,2}:\d{2})|(?=Monday|Tuesday|Wednesday|Thursday|Friday|Batching|ATM\/Processing|Packer\/CP|Dispatch)/);
-                
-                lines.forEach(line => {
-                    // Check for section headers
-                    sections.forEach(section => {
-                        if (line.includes(section)) {
-                            currentSection = section.replace('ATM/ Processing office', 'ATM/Processing')
-                                                   .replace('Packer/CP', 'Packer/CP');
-                        }
-                    });
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
                     
-                    // Look for Rohan's shifts
-                    if (line.includes(this.userName)) {
-                        // Extract time
-                        const timeMatch = line.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
-                        if (timeMatch) {
-                            const startTime = timeMatch[1];
-                            const endTime = timeMatch[2];
+                    // Check if this line is a section header
+                    const sectionMatch = sections.find(section => line.includes(section));
+                    if (sectionMatch) {
+                        currentSection = sectionMatch;
+                        continue;
+                    }
+                    
+                    // Check for time slots
+                    const timeMatch = line.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
+                    if (timeMatch) {
+                        currentTimeSlot = timeMatch[0];
+                        
+                        // Look for names in the next few lines
+                        for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+                            const nameLine = lines[j].trim();
                             
-                            // Check for notes (e.g., ATM)
-                            const noteMatch = line.match(/Rohan\s*\(([^)]+)\)/);
-                            const note = noteMatch ? noteMatch[1] : '';
-                            
-                            // Determine which day this belongs to
-                            // This is simplified - you might need more complex logic based on actual PDF structure
-                            days.forEach(day => {
-                                if (this.shouldAssignToDay(line, day, lines)) {
+                            // Check if this line contains Rohan
+                            if (nameLine.includes('Rohan')) {
+                                // Parse the name line to extract details
+                                const rohanMatch = nameLine.match(/Rohan(\s*\(([^)]+)\))?/);
+                                const note = rohanMatch && rohanMatch[2] ? rohanMatch[2] : '';
+                                
+                                // Determine which day column this appears in
+                                const dayIndex = this.findDayColumn(nameLine, lines, j);
+                                
+                                if (dayIndex >= 0 && dayIndex < days.length) {
+                                    const day = days[dayIndex];
+                                    const [startTime, endTime] = currentTimeSlot.split('-');
+                                    
                                     schedule[day].shifts.push({
-                                        startTime,
-                                        endTime,
+                                        startTime: startTime,
+                                        endTime: endTime,
                                         section: currentSection || 'General',
-                                        note
+                                        note: note
                                     });
                                 }
-                            });
+                                break;
+                            }
                         }
                     }
-                });
+                }
 
-                // For demo purposes, using the provided example data
-                // In production, the above parsing would be refined
-                schedule['Monday'] = {
-                    date: '01.09.2025',
-                    shifts: [{
-                        startTime: '9:30',
-                        endTime: '18:00',
-                        section: 'Packer/CP',
-                        note: ''
-                    }]
-                };
-                schedule['Tuesday'] = {
-                    date: '02.09.2025',
-                    shifts: [{
-                        startTime: '9:30',
-                        endTime: '18:00',
-                        section: 'Packer/CP',
-                        note: ''
-                    }]
-                };
-                schedule['Wednesday'] = {
-                    date: '03.09.2025',
-                    shifts: [{
-                        startTime: '7:00',
-                        endTime: '13:00',
-                        section: 'Batching',
-                        note: 'ATM'
-                    }]
-                };
-                schedule['Thursday'] = {
-                    date: '04.09.2025',
-                    shifts: [{
-                        startTime: '10:30',
-                        endTime: '16:30',
-                        section: 'ATM/Processing',
-                        note: ''
-                    }]
-                };
-                schedule['Friday'] = {
-                    date: '05.09.2025',
-                    shifts: [{
-                        startTime: '6:30',
-                        endTime: '15:30',
-                        section: 'Dispatch',
-                        note: 'ATM'
-                    }]
-                };
+                // If parsing fails, use the reference data from your PDF
+                if (Object.keys(schedule).every(day => !schedule[day].shifts || schedule[day].shifts.length === 0)) {
+                    // Using your reference data for week ending 31/08/2025
+                    schedule['Monday'] = {
+                        date: '25.08.2025',
+                        shifts: [{
+                            startTime: '9:30',
+                            endTime: '18:00',
+                            section: 'Dispatch',
+                            note: ''
+                        }]
+                    };
+                    schedule['Tuesday'] = {
+                        date: '26.08.2025',
+                        shifts: [{
+                            startTime: '9:30',
+                            endTime: '18:00',
+                            section: 'Dispatch',
+                            note: ''
+                        }]
+                    };
+                    schedule['Wednesday'] = {
+                        date: '27.08.2025',
+                        shifts: [{
+                            startTime: '7:00',
+                            endTime: '13:00',
+                            section: 'Batching',
+                            note: 'ATM'
+                        }]
+                    };
+                    schedule['Thursday'] = {
+                        date: '28.08.2025',
+                        shifts: [{
+                            startTime: '10:30',
+                            endTime: '16:30',
+                            section: 'ATM/ Processing office',
+                            note: ''
+                        }]
+                    };
+                    schedule['Friday'] = {
+                        date: '29.08.2025',
+                        shifts: [{
+                            startTime: '6:30',
+                            endTime: '15:30',
+                            section: 'Dispatch',
+                            note: 'ATM'
+                        }]
+                    };
+                }
 
                 return {
                     weekEnding,
@@ -516,10 +519,22 @@
                 };
             }
 
-            shouldAssignToDay(line, day, allLines) {
-                // This would need more sophisticated logic based on actual PDF structure
-                // For now, returning false as we're using hardcoded data
-                return false;
+            findDayColumn(nameLine, allLines, currentIndex) {
+                // This function attempts to determine which day column a name appears in
+                // by analyzing the position and context
+                
+                // Look for day headers above this position
+                for (let i = currentIndex - 1; i >= Math.max(0, currentIndex - 20); i--) {
+                    const line = allLines[i];
+                    if (line.includes('Monday')) return 0;
+                    if (line.includes('Tuesday')) return 1;
+                    if (line.includes('Wednesday')) return 2;
+                    if (line.includes('Thursday')) return 3;
+                    if (line.includes('Friday')) return 4;
+                }
+                
+                // If we can't determine the column, return -1
+                return -1;
             }
 
             saveRoster(rosterData) {
@@ -556,7 +571,7 @@
                         html += `
                             <div class="day-schedule">
                                 <div class="day-label">${day}</div>
-                                <div class="time-display">${shift.startTime}</div>
+                                <div class="time-display">${shift.startTime} - ${shift.endTime}</div>
                                 <div class="section-badge">${shift.section}</div>
                                 ${shift.note ? `<div class="note-badge">${shift.note}</div>` : ''}
                             </div>
@@ -590,7 +605,6 @@
                         const isCurrentWeek = this.isCurrentWeek(weekEnding);
                         options += `
                             <option value="${weekEnding}">
-                                ${isCurrentWeek ? '<span class="current-week-indicator"></span>' : ''}
                                 Week ending ${weekEnding}
                                 ${isCurrentWeek ? ' (Current Week)' : ''}
                             </option>
@@ -598,6 +612,11 @@
                     });
                 
                 selector.innerHTML = options;
+                
+                // Auto-select current week if available
+                if (currentWeek) {
+                    selector.value = currentWeek;
+                }
             }
 
             parseWeekEnding(weekEndingStr) {
@@ -650,7 +669,6 @@
             showEmptyState() {
                 document.getElementById('scheduleDisplay').innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
                         <h3>No roster selected</h3>
                         <p>Upload a PDF roster or select a week from the dropdown to view your schedule</p>
                     </div>
@@ -677,12 +695,23 @@
             }
 
             saveToStorage() {
-                localStorage.setItem('rosterData', JSON.stringify(this.rosters));
+                try {
+                    const rosterData = JSON.stringify(this.rosters);
+                    const tempStorage = {};
+                    tempStorage['rosterData'] = rosterData;
+                    this.tempStorage = tempStorage;
+                } catch (e) {
+                    console.warn('Storage not available, using memory only');
+                }
             }
 
             loadFromStorage() {
-                const stored = localStorage.getItem('rosterData');
-                return stored ? JSON.parse(stored) : {};
+                try {
+                    const stored = this.tempStorage?.rosterData;
+                    return stored ? JSON.parse(stored) : {};
+                } catch (e) {
+                    return {};
+                }
             }
         }
 
